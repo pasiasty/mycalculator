@@ -4,23 +4,29 @@ import (
 	"fmt"
 
 	"github.com/antlr4-go/antlr/v4"
+	"github.com/pasiasty/mycalculator/listener"
 	"github.com/pasiasty/mycalculator/parser"
 )
 
-func main() {
+func calc(input string) int {
 	// Setup the input
-	is := antlr.NewInputStream("1 + 2 * 3")
+	is := antlr.NewInputStream(input)
 
 	// Create the Lexer
 	lexer := parser.NewCalcLexer(is)
+	stream := antlr.NewCommonTokenStream(lexer, antlr.TokenDefaultChannel)
 
-	// Read all tokens
-	for {
-		t := lexer.NextToken()
-		if t.GetTokenType() == antlr.TokenEOF {
-			break
-		}
-		fmt.Printf("%s (%q)\n",
-			lexer.SymbolicNames[t.GetTokenType()], t.GetText())
-	}
+	// Create the Parser
+	p := parser.NewCalcParser(stream)
+
+	// Finally parse the expression (by walking the tree)
+	var listener listener.CalcListener
+	antlr.ParseTreeWalkerDefault.Walk(&listener, p.Start_())
+
+	return listener.Result()
+}
+
+func main() {
+	cmd := "1 + 2 * 3"
+	fmt.Printf("%s = %v", cmd, calc(cmd))
 }
